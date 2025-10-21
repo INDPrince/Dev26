@@ -16,7 +16,7 @@ const PWAInstallBanner = ({ className = '' }) => {
       if (window.deferredPWAPrompt) {
         setDeferredPrompt(window.deferredPWAPrompt);
         setShowBanner(true);
-        startCacheProgress(); // Start caching when prompt is ready
+        setIsCaching(true);
       }
     };
 
@@ -32,8 +32,28 @@ const PWAInstallBanner = ({ className = '' }) => {
     const handleUpdateAvailable = () => {
       setUpdateAvailable(true);
       setShowBanner(true);
-      startCacheProgress();
+      setIsCaching(true);
     };
+
+    // Listen for service worker messages about cache progress
+    const handleSWMessage = (event) => {
+      if (event.data && event.data.type === 'CACHE_PROGRESS') {
+        setCacheProgress(event.data.progress);
+        if (!isCaching) {
+          setIsCaching(true);
+        }
+      } else if (event.data && event.data.type === 'CACHE_COMPLETE') {
+        setCacheProgress(100);
+        setTimeout(() => {
+          setIsCaching(false);
+          setShowProgressOnly(false);
+        }, 1000);
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    }
 
     window.addEventListener('pwa-installable', handleInstallable);
     window.addEventListener('pwa-update-available', handleUpdateAvailable);
@@ -41,6 +61,9 @@ const PWAInstallBanner = ({ className = '' }) => {
     return () => {
       window.removeEventListener('pwa-installable', handleInstallable);
       window.removeEventListener('pwa-update-available', handleUpdateAvailable);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+      }
     };
   }, []);
 
