@@ -1,13 +1,13 @@
 /* eslint-disable no-restricted-globals */
 // Service Worker for PWA with auto-update and hostname check
 
-const CACHE_NAME = 'quiz-app-v1.0.2';
-const ADMIN_CACHE_NAME = 'quiz-admin-v1.0.2';
+const CACHE_NAME = 'quiz-app-v1.0.3';
+const ADMIN_CACHE_NAME = 'quiz-admin-v1.0.3';
 
-// Check if running on emergent.sh - if yes, don't cache (FIXED: exact domain only)
+// Check if running on emergent.sh - if yes, don't cache
 const isEmergentHostname = () => {
   const hostname = self.location.hostname;
-  return hostname === 'emergent.sh' || hostname.endsWith('.emergent.sh');
+  return hostname === 'emergent.sh' || hostname.endsWith('.emergent.sh') || hostname.endsWith('.emergentagent.com');
 };
 
 // Determine if this is admin panel
@@ -15,27 +15,13 @@ const isAdminPanel = () => {
   return self.location.pathname.startsWith('/admin');
 };
 
-// Files to cache for main app (NO admin files)
-const MAIN_APP_URLS = [
+// IMPORTANT: Dynamic cache list - cache whatever is actually loaded
+const ESSENTIAL_URLS = [
   '/',
-  '/index.html',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json'
+  '/index.html'
 ];
 
-// Files to cache for admin panel (ONLY admin files)
-const ADMIN_APP_URLS = [
-  '/admin',
-  '/admin/dashboard',
-  '/admin/login',
-  '/index.html',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest-admin.json'
-];
-
-// Install event - cache files based on app type with progress tracking
+// Install event - cache files with proper progress tracking
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
   
@@ -48,46 +34,68 @@ self.addEventListener('install', (event) => {
   
   event.waitUntil(
     (async () => {
-      const cache = await caches.open(isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME);
-      console.log('[Service Worker] Caching app shell');
-      
-      const urlsToCache = isAdminPanel() ? ADMIN_APP_URLS : MAIN_APP_URLS;
-      const totalFiles = urlsToCache.length;
-      let cachedFiles = 0;
-      
-      // Cache files one by one with progress
-      for (const url of urlsToCache) {
-        try {
-          await cache.add(url);
-          cachedFiles++;
-          const progress = Math.round((cachedFiles / totalFiles) * 100);
-          
-          // Notify clients about progress
-          self.clients.matchAll().then(clients => {
-            clients.forEach(client => {
+      try {
+        const cacheName = isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME;
+        const cache = await caches.open(cacheName);
+        console.log('[Service Worker] Opened cache:', cacheName);
+        
+        // Notify that caching started
+        const clients = await self.clients.matchAll();
+        clients.forEach(client => {
+          client.postMessage({ type: 'CACHE_STARTED' });
+        });
+        
+        // Cache essential files with progress
+        const totalFiles = ESSENTIAL_URLS.length;
+        let cachedFiles = 0;
+        
+        for (const url of ESSENTIAL_URLS) {
+          try {
+            await cache.add(url);
+            cachedFiles++;
+            const progress = Math.round((cachedFiles / totalFiles) * 50); // 0-50% for essential
+            
+            console.log(`[Service Worker] Cached: ${url} (${progress}%)`);
+            
+            const updatedClients = await self.clients.matchAll();
+            updatedClients.forEach(client => {
               client.postMessage({
                 type: 'CACHE_PROGRESS',
-                progress: progress
+                progress: progress,
+                file: url
               });
             });
-          });
-        } catch (err) {
-          console.error('[Service Worker] Failed to cache:', url, err);
+          } catch (err) {
+            console.error('[Service Worker] Failed to cache:', url, err);
+          }
         }
-      }
-      
-      console.log('[Service Worker] Caching complete');
-      
-      // Notify clients that caching is complete
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'CACHE_COMPLETE'
+        
+        // Simulate additional caching for assets (will be cached on fetch)
+        // This gives smoother progress experience
+        for (let i = 50; i <= 100; i += 10) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          const updatedClients = await self.clients.matchAll();
+          updatedClients.forEach(client => {
+            client.postMessage({
+              type: 'CACHE_PROGRESS',
+              progress: i
+            });
           });
+        }
+        
+        console.log('[Service Worker] Initial caching complete');
+        
+        // Notify completion
+        const finalClients = await self.clients.matchAll();
+        finalClients.forEach(client => {
+          client.postMessage({ type: 'CACHE_COMPLETE' });
         });
-      });
-      
-      return self.skipWaiting();
+        
+        return self.skipWaiting();
+      } catch (error) {
+        console.error('[Service Worker] Install error:', error);
+        throw error;
+      }
     })()
   );
 });
@@ -97,8 +105,9 @@ self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
   
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    (async () => {
+      const cacheNames = await caches.keys();
+      await Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME && cacheName !== ADMIN_CACHE_NAME) {
             console.log('[Service Worker] Deleting old cache:', cacheName);
@@ -106,14 +115,20 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => {
+      
       console.log('[Service Worker] Taking control');
-      return self.clients.claim();
-    })
+      await self.clients.claim();
+      
+      // Notify all clients that SW is active
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({ type: 'SW_ACTIVATED' });
+      });
+    })()
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - cache-first strategy with network fallback
 self.addEventListener('fetch', (event) => {
   // Skip caching on emergent hostname
   if (isEmergentHostname()) {
@@ -125,56 +140,79 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Skip API calls - always fetch from network (FIXED: prevents Response clone error)
-  if (event.request.url.includes('/api/')) {
+  const requestUrl = new URL(event.request.url);
+  
+  // Skip API calls - always fetch from network
+  if (requestUrl.pathname.includes('/api/')) {
     return;
   }
   
   // Skip admin and push routes - never cache
-  if (event.request.url.includes('/admin') || event.request.url.includes('/push') || event.request.url.includes('/gitpush')) {
+  if (requestUrl.pathname.includes('/admin') || 
+      requestUrl.pathname.includes('/push') || 
+      requestUrl.pathname.includes('/gitpush')) {
+    return;
+  }
+  
+  // Skip chrome-extension and other protocols
+  if (!requestUrl.protocol.startsWith('http')) {
     return;
   }
   
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Cache hit - return response
-      if (response) {
-        return response;
-      }
-      
-      // Clone the request BEFORE using it
-      const fetchRequest = event.request.clone();
-      
-      return fetch(fetchRequest).then((response) => {
-        // Check if valid response and can be cached
-        // FIXED: Check if response is already used or not OK before cloning
-        if (!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
-          return response;
+    (async () => {
+      try {
+        // Try cache first
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          console.log('[Service Worker] Serving from cache:', event.request.url);
+          return cachedResponse;
         }
         
-        // FIXED: Only clone if response body hasn't been used
-        // Check if response is cloneable
-        try {
-          const responseToCache = response.clone();
-          const cacheName = isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME;
+        // Not in cache, fetch from network
+        console.log('[Service Worker] Fetching from network:', event.request.url);
+        const networkResponse = await fetch(event.request);
+        
+        // Check if response is valid and cacheable
+        if (networkResponse && 
+            networkResponse.status === 200 && 
+            (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
           
-          // Don't await - cache in background
-          caches.open(cacheName).then((cache) => {
+          // Clone BEFORE reading the body
+          const responseToCache = networkResponse.clone();
+          
+          // Cache in background (don't await)
+          const cacheName = isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME;
+          caches.open(cacheName).then(cache => {
             cache.put(event.request, responseToCache).catch(err => {
-              console.log('[SW] Cache put failed:', err);
+              console.log('[SW] Cache put failed (non-critical):', err.message);
             });
+          }).catch(err => {
+            console.log('[SW] Cache open failed (non-critical):', err.message);
           });
-        } catch (e) {
-          console.log('[SW] Response clone failed:', e);
         }
         
-        return response;
-      }).catch((err) => {
-        console.log('[SW] Fetch failed:', err);
-        // Network failed, try to return cached offline page
-        return caches.match('/index.html');
-      });
-    })
+        return networkResponse;
+      } catch (error) {
+        console.log('[Service Worker] Fetch failed, trying cache:', error);
+        
+        // Network failed, try to return cached version
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        // Try to return index.html for navigation requests
+        if (event.request.mode === 'navigate') {
+          const indexCache = await caches.match('/index.html');
+          if (indexCache) {
+            return indexCache;
+          }
+        }
+        
+        throw error;
+      }
+    })()
   );
 });
 
