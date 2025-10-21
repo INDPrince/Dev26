@@ -44,7 +44,16 @@ export default function GitAutoPush() {
         }),
       });
 
-      const data = await res.json();
+      // IMPORTANT: Clone response BEFORE reading body to avoid "body already used" error
+      // Read the response body only once
+      let data;
+      try {
+        const responseText = await res.text();
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        throw new Error('Invalid response from server');
+      }
       
       if (res.ok) {
         setStatus(`✅ ${data.message}`);
