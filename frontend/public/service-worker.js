@@ -35,7 +35,7 @@ const ADMIN_APP_URLS = [
   '/manifest-admin.json'
 ];
 
-// Install event - cache files based on app type
+// Install event - cache files based on app type with progress tracking
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
   
@@ -47,15 +47,48 @@ self.addEventListener('install', (event) => {
   }
   
   event.waitUntil(
-    caches.open(isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME).then((cache) => {
+    (async () => {
+      const cache = await caches.open(isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME);
       console.log('[Service Worker] Caching app shell');
+      
       const urlsToCache = isAdminPanel() ? ADMIN_APP_URLS : MAIN_APP_URLS;
-      return cache.addAll(urlsToCache).catch(err => {
-        console.error('[Service Worker] Cache addAll failed:', err);
+      const totalFiles = urlsToCache.length;
+      let cachedFiles = 0;
+      
+      // Cache files one by one with progress
+      for (const url of urlsToCache) {
+        try {
+          await cache.add(url);
+          cachedFiles++;
+          const progress = Math.round((cachedFiles / totalFiles) * 100);
+          
+          // Notify clients about progress
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                type: 'CACHE_PROGRESS',
+                progress: progress
+              });
+            });
+          });
+        } catch (err) {
+          console.error('[Service Worker] Failed to cache:', url, err);
+        }
+      }
+      
+      console.log('[Service Worker] Caching complete');
+      
+      // Notify clients that caching is complete
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'CACHE_COMPLETE'
+          });
+        });
       });
-    }).then(() => {
+      
       return self.skipWaiting();
-    })
+    })()
   );
 });
 
