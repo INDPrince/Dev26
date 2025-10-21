@@ -171,10 +171,7 @@ const PWAInstallBanner = ({ className = '' }) => {
   // Install banner with animations from test-animations.html
   return (
     <div 
-      className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[9998] max-w-[90%] w-[360px] ${className}`}
-      style={{
-        animation: 'elasticSlideUp 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards'
-      }}
+      className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[9998] max-w-[90%] w-[360px] animate-elastic-slide-up ${className}`}
     >
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl shadow-2xl p-4">
         <div className="flex items-start gap-3 mb-3">
