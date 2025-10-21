@@ -1,0 +1,43 @@
+{
+  "name": "QuizMaster Admin Panel",
+  "short_name": "Quiz Admin",
+  "description": "Admin panel for managing quizzes, questions, and database",
+  "start_url": "/admin/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "scope": "/admin/",
+  "icons": [
+    {
+      "src": "/icon-admin-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-admin-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Go to admin dashboard",
+      "url": "/admin/dashboard",
+      "icons": [{ "src": "/icon-admin-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Database",
+      "short_name": "Database",
+      "description": "Manage database",
+      "url": "/admin/database",
+      "icons": [{ "src": "/icon-admin-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
