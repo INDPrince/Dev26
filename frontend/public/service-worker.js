@@ -1,8 +1,8 @@
 /* eslint-disable no-restricted-globals */
 // Service Worker for PWA with auto-update and hostname check
 
-const CACHE_NAME = 'quiz-app-v1.0.1';
-const ADMIN_CACHE_NAME = 'quiz-admin-v1.0.1';
+const CACHE_NAME = 'quiz-app-v1.0.2';
+const ADMIN_CACHE_NAME = 'quiz-admin-v1.0.2';
 
 // Check if running on emergent.sh - if yes, don't cache (FIXED: exact domain only)
 const isEmergentHostname = () => {
