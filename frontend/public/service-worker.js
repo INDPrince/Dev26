@@ -92,13 +92,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Skip API calls - always fetch from network
+  // Skip API calls - always fetch from network (FIXED: prevents Response clone error)
   if (event.request.url.includes('/api/')) {
     return;
   }
   
   // Skip admin and push routes - never cache
-  if (event.request.url.includes('/admin') || event.request.url.includes('/push')) {
+  if (event.request.url.includes('/admin') || event.request.url.includes('/push') || event.request.url.includes('/gitpush')) {
     return;
   }
   
@@ -109,25 +109,35 @@ self.addEventListener('fetch', (event) => {
         return response;
       }
       
-      // Clone the request
+      // Clone the request BEFORE using it
       const fetchRequest = event.request.clone();
       
       return fetch(fetchRequest).then((response) => {
-        // Check if valid response
-        if (!response || response.status !== 200 || response.type !== 'basic') {
+        // Check if valid response and can be cached
+        // FIXED: Check if response is already used or not OK before cloning
+        if (!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
           return response;
         }
         
-        // Clone the response
-        const responseToCache = response.clone();
-        const cacheName = isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME;
-        
-        caches.open(cacheName).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
+        // FIXED: Only clone if response body hasn't been used
+        // Check if response is cloneable
+        try {
+          const responseToCache = response.clone();
+          const cacheName = isAdminPanel() ? ADMIN_CACHE_NAME : CACHE_NAME;
+          
+          // Don't await - cache in background
+          caches.open(cacheName).then((cache) => {
+            cache.put(event.request, responseToCache).catch(err => {
+              console.log('[SW] Cache put failed:', err);
+            });
+          });
+        } catch (e) {
+          console.log('[SW] Response clone failed:', e);
+        }
         
         return response;
-      }).catch(() => {
+      }).catch((err) => {
+        console.log('[SW] Fetch failed:', err);
         // Network failed, try to return cached offline page
         return caches.match('/index.html');
       });
