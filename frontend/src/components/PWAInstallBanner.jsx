@@ -135,10 +135,7 @@ const PWAInstallBanner = ({ className = '' }) => {
   // Update notification
   if (updateAvailable) {
     return (
-      <div className={`fixed top-5 right-5 z-[9998] animate-elastic-slide-right max-w-[90vw] ${className}`}
-           style={{
-             animation: 'elasticSlideInRight 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards'
-           }}>
+      <div className={`fixed top-5 right-5 z-[9998] animate-elastic-slide-right max-w-[90vw] ${className}`}>
         <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl shadow-2xl p-4 w-[340px] max-w-full">
           <div className="font-bold text-sm mb-1">🎉 New Update Available!</div>
           <div className="text-xs opacity-95 mb-2">A new version is ready. Refresh to update.</div>
