@@ -61,6 +61,37 @@ button:focus-visible {
 }
 
 /* PWA Install Banner Animations */
+/* Diagonal slide from bottom-left corner with elastic bounce */
+@keyframes diagonalSlideUp {
+    0% { 
+        transform: translate(-150%, 200px); 
+        opacity: 0;
+        scale: 0.7;
+    }
+    40% {
+        transform: translate(-60%, -30px);
+        scale: 1.08;
+    }
+    60% {
+        transform: translate(-45%, 10px);
+        scale: 0.95;
+    }
+    75% {
+        transform: translate(-48%, -8px);
+        scale: 1.02;
+    }
+    90% {
+        transform: translate(-51%, 3px);
+        scale: 0.99;
+    }
+    100% { 
+        transform: translate(-50%, 0); 
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+/* Fallback: Simple elastic slide up */
 @keyframes elasticSlideUp {
     0% { 
         transform: translateX(-50%) translateY(200px); 
