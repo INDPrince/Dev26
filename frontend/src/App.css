@@ -59,3 +59,96 @@ button:focus-visible {
         overflow-y: auto;
     }
 }
+
+/* PWA Install Banner Animations */
+@keyframes elasticSlideUp {
+    0% { 
+        transform: translateX(-50%) translateY(200px); 
+        opacity: 0;
+        scale: 0.8;
+    }
+    50% {
+        transform: translateX(-50%) translateY(-20px);
+        scale: 1.05;
+    }
+    65% {
+        transform: translateX(-50%) translateY(5px);
+        scale: 0.98;
+    }
+    80% {
+        transform: translateX(-50%) translateY(-5px);
+        scale: 1.01;
+    }
+    100% { 
+        transform: translateX(-50%) translateY(0); 
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+@keyframes elasticSlideInRight {
+    0% { 
+        transform: translateX(400px); 
+        opacity: 0;
+        scale: 0.8;
+    }
+    50% {
+        transform: translateX(-15px);
+        scale: 1.05;
+    }
+    65% {
+        transform: translateX(5px);
+        scale: 0.98;
+    }
+    80% {
+        transform: translateX(-3px);
+        scale: 1.01;
+    }
+    100% { 
+        transform: translateX(0); 
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+.animate-elastic-slide-up {
+    animation: elasticSlideUp 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-elastic-slide-right {
+    animation: elasticSlideInRight 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Progress bar animation */
+@keyframes progressFill {
+    0% { width: 0%; }
+    100% { width: 100%; }
+}
+
+/* Mobile responsive PWA animations */
+@media (max-width: 640px) {
+    @keyframes elasticSlideUp {
+        0% { 
+            transform: translateX(-50%) translateY(200px); 
+            opacity: 0;
+            scale: 0.8;
+        }
+        50% {
+            transform: translateX(-50%) translateY(-20px);
+            scale: 1.05;
+        }
+        65% {
+            transform: translateX(-50%) translateY(5px);
+            scale: 0.98;
+        }
+        80% {
+            transform: translateX(-50%) translateY(-5px);
+            scale: 1.01;
+        }
+        100% { 
+            transform: translateX(-50%) translateY(0); 
+            opacity: 1;
+            scale: 1;
+        }
+    }
+}
