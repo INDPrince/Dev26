@@ -146,6 +146,10 @@ button:focus-visible {
     animation: elasticSlideUp 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
+.animate-diagonal-slide-up {
+    animation: diagonalSlideUp 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
 .animate-elastic-slide-right {
     animation: elasticSlideInRight 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
