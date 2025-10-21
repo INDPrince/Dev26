@@ -162,22 +162,47 @@ button:focus-visible {
 
 /* Mobile responsive PWA animations */
 @media (max-width: 640px) {
+    @keyframes diagonalSlideUp {
+        0% { 
+            transform: translate(-120%, 150px); 
+            opacity: 0;
+            scale: 0.75;
+        }
+        45% {
+            transform: translate(-55%, -20px);
+            scale: 1.06;
+        }
+        65% {
+            transform: translate(-47%, 8px);
+            scale: 0.97;
+        }
+        80% {
+            transform: translate(-49%, -5px);
+            scale: 1.01;
+        }
+        100% { 
+            transform: translate(-50%, 0); 
+            opacity: 1;
+            scale: 1;
+        }
+    }
+    
     @keyframes elasticSlideUp {
         0% { 
-            transform: translateX(-50%) translateY(200px); 
+            transform: translateX(-50%) translateY(150px); 
             opacity: 0;
             scale: 0.8;
         }
         50% {
-            transform: translateX(-50%) translateY(-20px);
-            scale: 1.05;
+            transform: translateX(-50%) translateY(-15px);
+            scale: 1.04;
         }
         65% {
             transform: translateX(-50%) translateY(5px);
             scale: 0.98;
         }
         80% {
-            transform: translateX(-50%) translateY(-5px);
+            transform: translateX(-50%) translateY(-3px);
             scale: 1.01;
         }
         100% { 
