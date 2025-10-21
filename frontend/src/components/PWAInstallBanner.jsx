@@ -67,25 +67,7 @@ const PWAInstallBanner = ({ className = '' }) => {
     };
   }, []);
 
-  const startCacheProgress = () => {
-    setIsCaching(true);
-    setCacheProgress(0);
-    
-    // Simulate cache progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsCaching(false);
-          setShowProgressOnly(false);
-        }, 500);
-      }
-      setCacheProgress(Math.min(progress, 100));
-    }, 200);
-  };
+  // Cache progress is now handled by service worker messages
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
